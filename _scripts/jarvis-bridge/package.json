@@ -1,0 +1,14 @@
+{
+  "name": "jarvis-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ponte WebSocket tra la UI di JARVIS e il cervello (Claude Agent SDK)",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "*",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "smart-connections-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Obsidian Smart Connections - enables semantic search and knowledge graph queries",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "smart-connections-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "obsidian",
+    "smart-connections",
+    "semantic-search",
+    "embeddings"
+  ],
+  "author": "Daniel Glickman",
+  "license": "MIT",
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}

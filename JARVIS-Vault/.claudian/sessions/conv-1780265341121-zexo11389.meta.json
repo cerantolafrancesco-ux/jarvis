@@ -1,0 +1,23 @@
+{
+  "id": "conv-1780265341121-zexo11389",
+  "providerId": "claude",
+  "title": "sei operativo",
+  "titleGenerationStatus": "failed",
+  "createdAt": 1780265341121,
+  "updatedAt": 1780275456773,
+  "lastResponseAt": 1780275456773,
+  "sessionId": "8b5cdd0e-262b-4b3a-b4bd-77c0fddcd5ec",
+  "providerState": {
+    "providerSessionId": "8b5cdd0e-262b-4b3a-b4bd-77c0fddcd5ec"
+  },
+  "usage": {
+    "model": "haiku",
+    "inputTokens": 10,
+    "cacheCreationInputTokens": 47363,
+    "cacheReadInputTokens": 0,
+    "contextWindow": 200000,
+    "contextTokens": 47373,
+    "percentage": 24,
+    "contextWindowIsAuthoritative": true
+  }
+}

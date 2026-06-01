@@ -1,0 +1,21 @@
+# Segreti — non committare MAI
+**/.env
+
+# Dipendenze (rigenerabili con npm install)
+**/node_modules/
+
+# Stato volatile / rigenerabile
+JARVIS-Vault/.smart-env/
+JARVIS-Vault/.obsidian/workspace.json
+JARVIS-Vault/.obsidian/plugins/
+_scripts/outbox/
+_scripts/logs/
+_scratch/
+
+# Repo esterno clonato: niente history
+_scripts/smart-connections-mcp/.git/
+
+# Varie
+*.tmp
+Thumbs.db
+.DS_Store

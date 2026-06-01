@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS — UI prototype v0.2 (Aqua)</title>
+<style>
+  :root{
+    --ink:#13314d; --azure:#3b9be8; --azure-deep:#1f6fb2;
+    --glass:rgba(255,255,255,0.55); --glass-see:rgba(255,255,255,0.26);
+    --edge:rgba(120,180,235,0.55); --ok:#2bb673; --wait:#f2a51a; --idle:#9bb0c2;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 70% -10%, #eaf6ff 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #e4f1fb 0%, transparent 55%),
+      linear-gradient(180deg,#ffffff 0%,#f3f9ff 100%);
+  }
+  #ripple{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .brand{position:fixed;top:14px;left:20px;font-weight:600;letter-spacing:.16em;color:#7fa6c6;font-size:13px;user-select:none;z-index:6}
+  .hint{position:fixed;top:14px;right:18px;font-size:12px;color:#90b0cc;max-width:44vw;text-align:right;user-select:none;z-index:6}
+  #sound{position:fixed;bottom:16px;left:16px;z-index:6;width:40px;height:40px;border-radius:50%;border:1px solid var(--edge);
+    background:var(--glass);backdrop-filter:blur(8px);cursor:pointer;font-size:17px}
+
+  /* FAB orb stile Aqua */
+  #fab{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;z-index:5;
+    color:#fff;font-size:40px;line-height:78px;
+    background:radial-gradient(circle at 32% 28%, #bfe3ff 0%, #4ea8ee 38%, #1f72b8 100%);
+    box-shadow:0 12px 34px rgba(40,130,200,.45), inset 0 2px 6px rgba(255,255,255,.8), inset 0 -8px 16px rgba(20,90,150,.5);
+    transition:transform .14s}
+  #fab::after{content:"";position:absolute;left:18%;top:10%;width:64%;height:38%;border-radius:50%;
+    background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,0));pointer-events:none}
+  #fab:hover{transform:translate(-50%,-50%) scale(1.07)}
+  #fab.tucked{left:auto;right:26px;top:auto;bottom:26px;transform:none;width:60px;height:60px;line-height:60px;font-size:32px}
+  #fab.tucked:hover{transform:scale(1.07)}
+
+  /* finestra */
+  .term{position:absolute;z-index:10;min-width:300px;min-height:180px;width:460px;height:300px;border-radius:14px;overflow:hidden;
+    background:var(--glass);backdrop-filter:blur(11px) saturate(1.2);-webkit-backdrop-filter:blur(11px) saturate(1.2);
+    border:1px solid var(--edge);display:flex;flex-direction:column;
+    box-shadow:0 20px 45px rgba(40,110,180,.22), inset 0 1px 0 rgba(255,255,255,.9);
+    transition:background .3s, opacity .3s, filter .3s, box-shadow .2s}
+  .term.see{background:var(--glass-see)}            /* più trasparente quando copre un'altra */
+  .term .bar{flex:0 0 36px;display:flex;align-items:center;gap:9px;padding:0 11px;cursor:move;user-select:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(225,242,255,.35));border-bottom:1px solid rgba(150,195,235,.4)}
+  .dot{width:12px;height:12px;border-radius:50%;cursor:pointer;flex:0 0 auto;
+    background:radial-gradient(circle at 35% 30%,#9be8c2,var(--ok));box-shadow:0 0 0 0 rgba(43,182,115,.5)}
+  .title{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#16384f;transition:opacity .5s}
+  .btns{display:flex;gap:6px}
+  .btns button{width:23px;height:23px;border:none;border-radius:7px;cursor:pointer;font-size:13px;line-height:1;color:#16384f;
+    background:rgba(255,255,255,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .btns button:hover{background:#fff}
+  .body{flex:1;padding:12px 14px;font-family:'Cascadia Code',Consolas,monospace;font-size:12.5px;line-height:1.55;overflow:auto;white-space:pre-wrap;color:#13405e}
+  .body .sys{color:#1f72b8}.body .ok{color:var(--ok)}
+  .caret{display:inline-block;width:8px;height:15px;background:#13405e;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .resize{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;
+    background:linear-gradient(135deg,transparent 50%,var(--edge) 50%);border-radius:0 0 12px 0}
+
+  .term.waiting{border-color:var(--wait);animation:wobble 2.4s ease-in-out infinite}
+  .term.waiting .bar{background:linear-gradient(180deg,rgba(255,244,220,.85),rgba(255,232,190,.4))}
+  .term.waiting .dot{background:radial-gradient(circle at 35% 30%,#ffe0a0,var(--wait));animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,165,26,.55)}50%{box-shadow:0 0 0 8px rgba(242,165,26,0)}}
+  @keyframes wobble{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+  .term.idle{filter:grayscale(.85) brightness(.97);opacity:.6}
+  .term.idle .dot{background:var(--idle);box-shadow:none}
+
+  /* tab galleggiante e trascinabile (bolla) */
+  .tab{position:absolute;z-index:8;display:flex;align-items:center;gap:8px;max-width:230px;height:34px;padding:0 14px;border-radius:18px;cursor:grab;
+    background:radial-gradient(circle at 30% 25%, rgba(255,255,255,.9), rgba(210,236,255,.6));backdrop-filter:blur(8px);
+    border:1px solid var(--edge);box-shadow:0 8px 20px rgba(40,110,180,.25), inset 0 1px 0 rgba(255,255,255,.9);
+    font-size:12.5px;font-weight:600;color:#16384f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tab .d{width:10px;height:10px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+  .tab.waiting .d{background:var(--wait);animation:pulse 1.1s ease-in-out infinite}
+  .tab.idle{filter:grayscale(1);opacity:.7}
+</style>
+</head>
+<body>
+  <canvas id="ripple"></canvas>
+  <div class="brand">JARVIS</div>
+  <div class="hint">+ nuovo terminale · trascina la barra · ridimensiona dall'angolo · pallino = stato · "–" = bolla-tab (trascinabile, clic per riaprire) · sovrapponi: la sopra diventa trasparente</div>
+  <button id="sound" title="Suoni on/off">🔊</button>
+  <button id="fab" title="Nuovo terminale">+</button>
+
+<script>
+(function(){
+  /* ---------- AUDIO (bubble / acqua, sintetizzati) ---------- */
+  let AC=null, soundOn=true;
+  function actx(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+  function bubble(){ if(!soundOn)return; const c=actx(); if(!c)return; const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain(); o.type='sine';
+    o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(680,t+.12);
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.25,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+.22);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+.24); }
+  function droplet(){ if(!soundOn)return; const c=actx(); if(!c)return; const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain(); o.type='sine';
+    o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(320,t+.10);
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.2,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+.16);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+.18); }
+  document.getElementById('sound').addEventListener('click',function(){ soundOn=!soundOn; this.textContent=soundOn?'🔊':'🔇'; if(soundOn){actx();bubble();} });
+
+  /* ---------- ONDE che si propagano (canvas) ---------- */
+  const cv=document.getElementById('ripple'), cx=cv.getContext('2d'); let W,H;
+  function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; } resize(); addEventListener('resize',resize);
+  const ripples=[]; let amb=0;
+  function ripple(x,y,strong){ ripples.push({x,y,r:2,max:strong?320:200,a:strong?.5:.32}); }
+  function loop(){
+    cx.clearRect(0,0,W,H);
+    amb+=0.012;
+    // sheen ambientale: bande morbide che ondeggiano (superficie bagnata)
+    for(let i=0;i<3;i++){ const yy=H*(0.25+0.27*i)+Math.sin(amb+i*2)*22;
+      const g=cx.createLinearGradient(0,yy-90,0,yy+90); g.addColorStop(0,'rgba(160,205,240,0)');
+      g.addColorStop(.5,'rgba(150,200,238,'+(0.05+0.02*Math.sin(amb*1.3+i))+')'); g.addColorStop(1,'rgba(160,205,240,0)');
+      cx.fillStyle=g; cx.fillRect(0,yy-90,W,180); }
+    // onde concentriche
+    for(let i=ripples.length-1;i>=0;i--){ const r=ripples[i]; r.r+=2.4; r.a*=0.975;
+      cx.beginPath(); cx.arc(r.x,r.y,r.r,0,7); cx.strokeStyle='rgba(70,150,215,'+r.a+')'; cx.lineWidth=2; cx.stroke();
+      cx.beginPath(); cx.arc(r.x,r.y,r.r*0.6,0,7); cx.strokeStyle='rgba(120,190,235,'+(r.a*0.6)+')'; cx.lineWidth=1.4; cx.stroke();
+      if(r.r>r.max||r.a<0.02)ripples.splice(i,1); }
+    requestAnimationFrame(loop);
+  }
+  loop();
+  // ambient ripple ogni tanto
+  setInterval(()=>ripple(Math.random()*W,Math.random()*H,false),2600);
+  // ripple al clic ovunque
+  addEventListener('mousedown',e=>{ if(e.target.id==='ripple'||e.target===document.body) ripple(e.clientX,e.clientY,false); });
+
+  /* ---------- TERMINALI ---------- */
+  const fab=document.getElementById('fab'); let z=10,n=0,cascade=0;
+  const states=['active','waiting','idle'], stl={active:'attivo',waiting:'in attesa di input',idle:'fermo'};
+  // titoli che evolvono col "contenuto" (mock; nel sistema reale = riassunto LLM della sessione)
+  const headlines=[ "Sessione avviata", "Analizzo la richiesta…", "Recupero dal Vault", "Configurazione servizi",
+    "Riepilogo dei task del giorno", "Bozze email pronte", "In attesa di una tua scelta", "Sintesi completata" ];
+
+  function rect(el){ return el.getBoundingClientRect(); }
+  function intersect(a,b){ return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom); }
+  function updateSee(){ // una finestra diventa trasparente se copre una con z inferiore
+    const list=[...document.querySelectorAll('.term')].filter(t=>t.style.display!=='none');
+    list.forEach(A=>{ const ra=rect(A),za=+A.style.zIndex; let cover=false;
+      list.forEach(B=>{ if(B!==A && (+B.style.zIndex)<za && intersect(ra,rect(B))) cover=true; });
+      A.classList.toggle('see',cover); });
+  }
+  function front(el){ el.style.zIndex=++z; updateSee(); }
+
+  function makeTerminal(){
+    n++; const id=n; const el=document.createElement('div'); el.className='term'; el.dataset.state='active'; el._id=id;
+    el.style.left=(90+(cascade%6)*44)+'px'; el.style.top=(70+(cascade%6)*38)+'px'; el.style.zIndex=++z; cascade++;
+    el.innerHTML=`<div class="bar"><span class="dot" title="Stato: attivo (clic per cambiare)"></span>
+      <span class="title">Terminale ${id}</span>
+      <span class="btns"><button class="min" title="Bolla-tab">–</button><button class="close" title="Chiudi">×</button></span></div>
+      <div class="body"><span class="sys">JARVIS › sessione ${id} avviata</span>
+<span class="ok">✓ pronto</span>
+› <span class="caret"></span></div><div class="resize"></div>`;
+    document.body.appendChild(el); bubble(); ripple(el.offsetLeft+40,el.offsetTop+20,true);
+
+    el.addEventListener('mousedown',()=>front(el));
+    const bar=el.querySelector('.bar');
+    bar.addEventListener('mousedown',e=>{ if(e.target.closest('button')||e.target.classList.contains('dot'))return;
+      const sx=e.clientX,sy=e.clientY,ox=el.offsetLeft,oy=el.offsetTop;
+      const mv=ev=>{el.style.left=(ox+ev.clientX-sx)+'px';el.style.top=(oy+ev.clientY-sy)+'px';updateSee();};
+      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up); });
+    el.querySelector('.resize').addEventListener('mousedown',e=>{ e.stopPropagation();
+      const sx=e.clientX,sy=e.clientY,ow=el.offsetWidth,oh=el.offsetHeight;
+      const mv=ev=>{el.style.width=Math.max(300,ow+ev.clientX-sx)+'px';el.style.height=Math.max(180,oh+ev.clientY-sy)+'px';updateSee();};
+      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up); });
+    el.querySelector('.dot').addEventListener('click',e=>{e.stopPropagation();
+      let i=(states.indexOf(el.dataset.state)+1)%3; setState(el,states[i]); droplet();});
+    el.querySelector('.min').addEventListener('click',e=>{e.stopPropagation();minimize(el);});
+    el.querySelector('.close').addEventListener('click',e=>{e.stopPropagation();droplet();ripple(el.offsetLeft+40,el.offsetTop+20,false);el.remove();const t=document.querySelector('.tab[data-tab="'+id+'"]');if(t)t.remove();updateSee();});
+
+    // titolo che evolve nel tempo (come un titolo d'articolo)
+    el._title='Terminale '+id;
+    el._timer=setInterval(()=>{ if(el.dataset.state==='waiting'){el._title='⏳ In attesa di input';}
+      else if(el.dataset.state==='idle'){el._title='Sessione in pausa';}
+      else{el._title=headlines[Math.floor(Math.random()*headlines.length)];}
+      const tEl=el.querySelector('.title'); tEl.style.opacity=0;
+      setTimeout(()=>{tEl.textContent=el._title; tEl.style.opacity=1; const tab=document.querySelector('.tab[data-tab="'+id+'"]'); if(tab)tab.lastChild.textContent=' '+el._title;},250);
+    }, 6000);
+    updateSee();
+  }
+  function setState(el,s){ el.dataset.state=s; el.classList.remove('waiting','idle'); if(s!=='active')el.classList.add(s);
+    el.querySelector('.dot').title='Stato: '+stl[s]+' (clic per cambiare)';
+    const tab=document.querySelector('.tab[data-tab="'+el._id+'"]'); if(tab){tab.classList.remove('waiting','idle'); if(s!=='active')tab.classList.add(s);} }
+
+  function minimize(el){ const id=el._id; el.style.display='none'; droplet(); updateSee();
+    if(document.querySelector('.tab[data-tab="'+id+'"]'))return;
+    const tab=document.createElement('div'); tab.className='tab'+(el.dataset.state!=='active'?' '+el.dataset.state:''); tab.dataset.tab=id;
+    tab.style.left=(40+(id%8)*60)+'px'; tab.style.top=(innerHeight-70)+'px'; tab.style.zIndex=++z;
+    tab.innerHTML='<span class="d"></span><span>'+(el._title||('Terminale '+id))+'</span>';
+    // drag della bolla; clic-secco (senza drag) = riapri
+    tab.addEventListener('mousedown',e=>{ const sx=e.clientX,sy=e.clientY,ox=tab.offsetLeft,oy=tab.offsetTop; let moved=false; tab.style.cursor='grabbing';
+      const mv=ev=>{ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>4)moved=true; tab.style.left=(ox+ev.clientX-sx)+'px'; tab.style.top=(oy+ev.clientY-sy)+'px'; };
+      const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);tab.style.cursor='grab';
+        if(!moved){ el.style.display='flex'; front(el); bubble(); tab.remove(); } };
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up); });
+    document.body.appendChild(tab);
+  }
+
+  fab.addEventListener('click',()=>{ actx(); makeTerminal(); fab.classList.add('tucked'); });
+})();
+</script>
+</body>
+</html>
