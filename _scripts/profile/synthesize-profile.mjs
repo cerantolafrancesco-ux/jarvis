@@ -7,11 +7,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
 import { VAULT } from "../smart-connections-mcp/embedder.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OLLAMA = process.env.OLLAMA_URL || "http://localhost:11434";
 const MODEL  = process.env.JARVIS_PROFILE_MODEL || process.env.JARVIS_WORKER_MODEL || "qwen3:8b";
+// motore di sintesi: "claude" (qualità, via claude.exe) con ripiego su Ollama; "ollama" per restare in locale
+const ENGINE = (process.env.JARVIS_PROFILE_ENGINE || "claude").toLowerCase();
+const CLAUDE_EXE = process.env.JARVIS_CLAUDE_EXE || "C:\\Users\\ceran\\.local\\bin\\claude.exe";
+const CLAUDE_MODEL = process.env.JARVIS_PROFILE_CLAUDE_MODEL || "sonnet";
 const PROMPT_FILE = path.join(VAULT, "00_CORE", "PROFILE_SYNTH.md");
 const PROFILI = path.join(VAULT, "09_PROFILI");
 const STORICO = path.join(PROFILI, "_storico");
@@ -45,6 +50,20 @@ function ollama(system, prompt){
     body: JSON.stringify({ model:MODEL, system, prompt, stream:false, think:false, options:{ temperature:0.3 } }) })
     .then(r=>{ if(!r.ok) throw new Error("ollama HTTP "+r.status); return r.json(); })
     .then(j=>(j.response||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim());
+}
+
+// sintesi via Claude (claude.exe in print mode). cwd neutro: niente CLAUDE.md del progetto a interferire.
+function callClaude(system, prompt){
+  return new Promise((resolve, reject)=>{
+    let out="", err="";
+    const ch = spawn(CLAUDE_EXE, ["-p","--model",CLAUDE_MODEL], { cwd: __dirname });
+    ch.on("error", reject);
+    ch.stdout.on("data", d=> out+=d);
+    ch.stderr.on("data", d=> err+=d);
+    ch.on("close", code=> code===0 ? resolve(String(out).trim()) : reject(new Error("claude exit "+code+": "+String(err).slice(0,200))));
+    ch.stdin.write(system + "\n\n" + prompt + "\n");
+    ch.stdin.end();
+  });
 }
 
 // corpus per ogni utente, attribuito via frontmatter interlocutore
@@ -93,7 +112,14 @@ async function synth(user, notes){
   const corpus = corpusFor(user, notes||[]);
   let sys; try{ sys = fs.readFileSync(PROMPT_FILE,"utf8").replace(/^---[\s\S]*?---/,"").trim(); }catch{ sys = "Sintetizza un Profilo Personale in Markdown."; }
   const prompt = `Persona da profilare: ${user}\n\nCORPUS (dati eterogenei dal Vault):\n"""\n${corpus}\n"""\n\nProduci il Profilo Personale di ${user} nel formato richiesto. Solo il profilo in Markdown, nessun commento.\n/no_think`;
-  let profile; try{ profile = await ollama(sys, prompt); }catch(e){ log("ollama fallito:", e.message); return false; }
+  let profile;
+  try{
+    profile = ENGINE === "claude" ? await callClaude(sys, prompt) : await ollama(sys, prompt);
+  }catch(e){
+    log(ENGINE+" fallito:", e.message);
+    if(ENGINE === "claude"){ try{ log("ripiego su Ollama..."); profile = await ollama(sys, prompt); }catch(e2){ log("anche Ollama fallito:", e2.message); return false; } }
+    else return false;
+  }
   if(!profile || profile.length < 80){ log("output troppo breve per", user, "- salto"); return false; }
 
   fs.mkdirSync(PROFILI,{recursive:true}); fs.mkdirSync(STORICO,{recursive:true});

@@ -8,19 +8,25 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
-import { VAULT, embedText, loadHot, saveHot, absPath, relPath } from "../smart-connections-mcp/embedder.mjs";
+import { VAULT, embedText, loadHot, saveHot, absPath, relPath, cosine } from "../smart-connections-mcp/embedder.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OLLAMA = process.env.OLLAMA_URL || "http://localhost:11434";
 const MODEL  = process.env.JARVIS_WIKI_MODEL || process.env.JARVIS_WORKER_MODEL || "qwen3:8b";
 const RAW    = path.join(VAULT, "RAW_SOURCE");
 const WIKI   = path.join(VAULT, "WIKI");
+// cartelle esterne (es. Dropbox/Drive sincronizzati) da organizzare in WIKI, SOLA LETTURA (originali mai spostati)
+const EXTRA_DIRS = (process.env.JARVIS_RAW_EXTRA_DIRS ||
+  "C:\\Users\\ceran\\Dropbox\\jarvis;G:\\Il mio Drive\\JARVIS")
+  .split(";").map(s=>s.trim()).filter(Boolean);
 const PROMPT_FILE = path.join(VAULT, "00_CORE", "WIKI_ORGANIZER.md");
 const LEDGER = path.join(__dirname, "..", "logs", "wiki-processed.json");
 const POLL_MS = parseInt(process.env.JARVIS_WIKI_POLL || "15000", 10);
 const MAX_CHARS = parseInt(process.env.JARVIS_WIKI_MAXCHARS || "24000", 10);
 const REDO_ALL = process.argv.includes("--all");
 const RETENTION = (process.env.JARVIS_WIKI_RETENTION || "auto").toLowerCase(); // auto = JARVIS decide; keep = conserva sempre il grezzo
+const WIKI_LINK_K = parseInt(process.env.JARVIS_WIKI_LINK_K || "3", 10);          // quante note WIKI affini collegare
+const WIKI_LINK_THR = parseFloat(process.env.JARVIS_WIKI_LINK_THR || "0.55");     // soglia di similarità per collegarle
 const DEFAULT_SPEAKER = process.env.JARVIS_DEFAULT_SPEAKER || "Fra";
 const TRASH = path.join(RAW, "_cestino");
 
@@ -124,7 +130,10 @@ function moveToTrash(file){
 }
 
 async function processFile(file, ledger){
-  const rel = relPath(file);
+  const abs = path.resolve(file);
+  const isExternal = !abs.startsWith(path.resolve(VAULT) + path.sep);
+  const rel = isExternal ? abs : relPath(file);
+  const srcLink = isExternal ? rel : "[[" + rel + "]]";   // wikilink solo per i file dentro il Vault
   let st; try{ st=fs.statSync(file); }catch{ return; }
   const prev = ledger[rel];
   if(prev && prev.mtime === st.mtimeMs && !REDO_ALL) return;
@@ -138,20 +147,29 @@ async function processFile(file, ledger){
 
   // uno stub non e' riassumibile: il grezzo si conserva sempre
   let decision = { keep:true, reason:"stub" };
-  if(!res.stub) decision = await keepRaw(path.basename(file), res.kind, res.md);
+  if(!res.stub) decision = isExternal ? { keep:true, reason:"fonte esterna (cloud): originale mai spostato" } : await keepRaw(path.basename(file), res.kind, res.md);
 
   let content;
   if(res.stub){
-    content = frontmatter(rel, res.kind, "wiki, da-processare", attr, true) + `\n# ${path.basename(file)}\n\n**Sintesi:** Fonte non ancora estraibile automaticamente (${res.err}).\n\n> Fonte grezza: [[${rel}]] · generato da: ${attr.interlocutore||'?'}. Estrazione non riuscita; processare a mano o con Claude.\n`;
+    content = frontmatter(rel, res.kind, "wiki, da-processare", attr, true) + `\n# ${path.basename(file)}\n\n**Sintesi:** Fonte non ancora estraibile automaticamente (${res.err}).\n\n> Fonte grezza: ${srcLink} · generato da: ${attr.interlocutore||'?'}. Estrazione non riuscita; processare a mano o con Claude.\n`;
   } else {
     const footer = decision.keep
-      ? `> Fonte grezza: [[${rel}]] · generato da: ${attr.interlocutore||'?'}\n`
+      ? `> Fonte grezza: ${srcLink} · generato da: ${attr.interlocutore||'?'}\n`
       : `> Grezzo non conservato (solo sintesi) · generato da: ${attr.interlocutore||'?'} · motivo: ${decision.reason}. Originale in RAW_SOURCE/_cestino.\n`;
     content = frontmatter(rel, res.kind, grabTags(res.md), attr, decision.keep) + "\n" + res.md + "\n\n" + footer;
   }
+  // cross-link: embedda il contenuto, trova 2-3 note WIKI affini e aggiunge una sezione "Collegati"
+  let vec = null;
+  try{ vec = await embedText(wikiRel.replace(/\.md$/,"") + "\n" + content); }catch(e){ log("embed (per affini) posticipato:", e.message); }
+  if(vec){
+    try{
+      const hot = loadHot().filter(e => e.path.startsWith("WIKI/") && e.path !== wikiRel && Array.isArray(e.vector));
+      const aff = hot.map(e => ({ path:e.path, s: cosine(vec, e.vector) })).filter(x => x.s >= WIKI_LINK_THR).sort((a,b)=>b.s-a.s).slice(0, WIKI_LINK_K);
+      if(aff.length) content += "\n\n## Collegati\n" + aff.map(x => "- [[" + path.basename(x.path, ".md") + "]]").join("\n") + "\n";
+    }catch(e){ log("cross-link fallito:", e.message); }
+  }
   try{ fs.mkdirSync(WIKI,{recursive:true}); fs.writeFileSync(absPath(wikiRel), content); }catch(e){ log("scrittura wiki fallita", e.message); return; }
-  try{ const vec = await embedText(wikiRel.replace(/\.md$/,"") + "\n" + content); const entries = loadHot().filter(e=>e.path!==wikiRel); entries.push({ path:wikiRel, mtime:Date.now(), vector:vec }); saveHot(entries); }
-  catch(e){ log("embed posticipato (verra' ripreso al re-index):", e.message); }
+  if(vec){ try{ const entries = loadHot().filter(e=>e.path!==wikiRel); entries.push({ path:wikiRel, mtime:Date.now(), vector:vec }); saveHot(entries); }catch(e){ log("hot save posticipato:", e.message); } }
 
   let trashed = null;
   if(!res.stub && !decision.keep){ trashed = moveToTrash(file); log("grezzo nel cestino:", trashed||"(spostamento fallito, lasciato in sede)", "-", decision.reason); }
@@ -163,7 +181,10 @@ async function processFile(file, ledger){
 async function runOnce(){
   fs.mkdirSync(RAW,{recursive:true}); fs.mkdirSync(WIKI,{recursive:true});
   const ledger = loadLedger();
-  for(const f of walk(RAW)) await processFile(f, ledger);
+  for(const d of [RAW, ...EXTRA_DIRS]){
+    if(!fs.existsSync(d)){ log("cartella assente, salto:", d); continue; }
+    for(const f of walk(d)) await processFile(f, ledger);
+  }
   saveLedger(ledger);
 }
 

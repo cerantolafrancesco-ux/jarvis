@@ -3,5 +3,10 @@
   "newFileLocation": "folder",
   "newFileFolderPath": "03_RECORDS",
   "attachmentFolderPath": "_attachments",
-  "showUnsupportedFiles": true
+  "showUnsupportedFiles": true,
+  "userIgnoreFilters": [
+    "RAW_SOURCE/",
+    "06_INTERAZIONI/",
+    "09_PROFILI/_storico/"
+  ]
 }
