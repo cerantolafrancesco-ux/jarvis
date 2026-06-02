@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 tipo: concept-node
 cluster: tecnico
 created: 2026-06-01

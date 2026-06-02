@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 id: SYNTH-20260601-infrastruttura-jarvis
 tipo: synthesis
 topic: Costruzione infrastruttura JARVIS

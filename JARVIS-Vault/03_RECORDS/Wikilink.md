@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 id: REC-20260601-032443
 tipo: record
 fonte:

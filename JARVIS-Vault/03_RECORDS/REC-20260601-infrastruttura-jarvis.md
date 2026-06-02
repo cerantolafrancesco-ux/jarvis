@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 id: REC-20260601-infrastruttura-jarvis
 tipo: record
 fonte: cowork

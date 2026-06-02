@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 tipo: record
 created: 2026-06-02T10:21:21.663Z
 confidence: 0.5

@@ -11,6 +11,7 @@ JARVIS-Vault/.obsidian/plugins/
 _scripts/outbox/
 _scripts/logs/
 _scripts/smart-connections-mcp/hot-index.json
+_scripts/control/
 _scratch/
 
 # Repo esterno clonato: niente history

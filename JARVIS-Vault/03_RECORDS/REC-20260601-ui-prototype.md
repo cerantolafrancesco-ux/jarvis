@@ -1,4 +1,5 @@
 ---
+interlocutore: Fra
 id: REC-20260601-ui-prototype
 tipo: record
 fonte: cowork

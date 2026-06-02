@@ -14,6 +14,14 @@
   .brand{position:fixed;top:14px;left:20px;font-family:var(--tech);font-weight:700;letter-spacing:.22em;color:#7fa6c6;font-size:14px;z-index:6;user-select:none}
   #conn{position:fixed;top:14px;right:18px;font-size:14px;color:#90b0cc;z-index:6;user-select:none}
   #sound{position:fixed;top:44px;left:20px;z-index:6;width:34px;height:34px;border-radius:50%;border:1px solid var(--edge);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);cursor:pointer;font-size:14px}
+  #voice{position:fixed;top:82px;left:20px;z-index:6;width:34px;height:34px;border-radius:50%;border:1px solid var(--edge);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);cursor:pointer;font-size:14px}
+  #voice.off{opacity:.4}
+  #localbtn{position:fixed;top:44px;left:60px;z-index:6;width:34px;height:34px;border-radius:50%;border:1px solid var(--edge);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);cursor:pointer;font-size:14px}
+  #localbtn.on{background:#f2a51a;color:#fff;border-color:#f2a51a}
+  #restartbtn{position:fixed;top:44px;left:100px;z-index:6;width:34px;height:34px;border-radius:50%;border:1px solid var(--edge);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);cursor:pointer;font-size:15px}
+  #voicesel{position:fixed;top:120px;left:18px;z-index:6;max-width:170px;font-size:11px;border-radius:6px;border:1px solid var(--edge);background:rgba(255,255,255,.7);color:#0a3357;padding:2px}
+  .btns .rd.on{background:#2bb673;color:#fff}
+  #speaker{position:fixed;top:158px;left:18px;z-index:6;width:124px;font-size:11px;border-radius:6px;border:1px solid var(--edge);background:rgba(255,255,255,.7);color:#0a3357;padding:3px 6px}
   #fab{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:none;cursor:pointer;z-index:5;color:#fff;font-family:var(--tech);display:flex;align-items:center;justify-content:center;
     background:radial-gradient(circle at 32% 28%,#bfe3ff 0%,#4ea8ee 38%,#1f72b8 100%);box-shadow:0 12px 34px rgba(40,130,200,.45),inset 0 2px 6px rgba(255,255,255,.8),inset 0 -8px 16px rgba(20,90,150,.5);transition:width .35s,height .35s,font-size .35s,transform .14s}
   #fab::after{content:"";position:absolute;left:18%;top:9%;width:64%;height:36%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,0))}
@@ -55,13 +63,33 @@
   @keyframes wob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
   .term.busy .dot{background:radial-gradient(circle at 35% 30%,#bfe3ff,#2f86d8)}
   .term.idle .dot{background:var(--idle)}
+  #dbgbtn{position:fixed;top:14px;right:120px;z-index:60;font-size:12px;border:1px solid var(--edge);background:rgba(0,0,0,.55);color:#19ff5a;border-radius:6px;padding:2px 9px;cursor:pointer;font-family:'VT323',monospace}
+  #dbg{position:fixed;top:0;right:0;width:33vw;height:100vh;background:#000;color:#19ff5a;font-family:'VT323',monospace;font-size:13px;z-index:55;display:none;flex-direction:column;border-left:1px solid #0a5}
+  #dbg.on{display:flex}
+  #dbgh{flex:0 0 auto;padding:4px 9px;border-bottom:1px solid #063;display:flex;justify-content:space-between;align-items:center;letter-spacing:1px}
+  #dbgl{flex:1;margin:0;padding:6px 9px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.2}
+  #dbgx{cursor:pointer}
+  #chatbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(820px,70vw);z-index:7;display:flex;flex-direction:column;gap:6px}
+  #chatlog{max-height:120px;overflow:auto;font-family:var(--crt);font-size:15px;display:flex;flex-direction:column;gap:3px;padding:0 8px;text-shadow:0 1px 1px rgba(255,255,255,.7)}
+  #chatlog .u{color:#2f74d0}#chatlog .j{color:#10307a}
+  #chatrow{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.55);backdrop-filter:blur(8px);border:1px solid var(--edge);border-radius:22px;padding:6px 14px;box-shadow:0 6px 20px rgba(40,110,180,.18)}
+  #chatin{flex:1;border:none;background:transparent;outline:none;font-family:var(--crt);font-size:17px;color:#0c344f}
 </style></head>
 <body>
   <canvas id="ripple"></canvas>
   <div class="brand">J A R V I S</div>
   <div id="conn">● bridge…</div>
   <button id="sound" title="Suoni">🔊</button>
+  <button id="voice" title="Voce di JARVIS (TTS)">🗣️</button>
+  <button id="localbtn" title="Modalità locale (offline / tutto su Ollama)">🌐</button>
+  <button id="restartbtn" title="Riavvia tutto (TTS + ponte + UI)">↻</button>
+  <input id="speaker" title="Con chi sta parlando JARVIS" value="Fra">
+  <div id="voicestate" title="Stato della sessione vocale" style="position:fixed;top:186px;left:18px;z-index:6;font-family:var(--crt);font-size:11px;color:#8a93a6">💤 di' "Hey JARVIS"</div>
   <button id="fab" title="Nuovo terminale">+</button>
+  <button id="dbgbtn" title="Pannello debug">debug</button>
+  <div id="dbg"><div id="dbgh"><span>DEBUG — motore JARVIS</span><span id="dbgx">✕</span></div><pre id="dbgl"></pre></div>
+  <div id="lockmsg" style="position:fixed;top:0;left:0;right:0;z-index:50;background:#3a2a00;color:#ffd479;font-family:var(--crt);font-size:14px;text-align:center;padding:8px;border-bottom:1px solid #6b5200">🔒 Di' "Hey JARVIS" per identificarsi, Signore — la tastiera resta bloccata fino al riconoscimento.</div>
+  <div id="chatbar"><div id="chatlog"></div><div id="chatrow"><span style="color:#2f74d0;font-family:var(--crt)">»</span><input id="chatin" placeholder="Chat veloce con JARVIS (Ollama) — non salvata in memoria"></div></div>
 <script>
 (function(){
   let AC=null,soundOn=true;
@@ -69,6 +97,49 @@
   function tone(f1,f2,d){if(!soundOn)return;const c=actx();if(!c)return;const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+d*.6);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+d+.02)}
   const bubble=()=>tone(240,680,.22),droplet=()=>tone(900,320,.16);
   document.getElementById('sound').onclick=function(){soundOn=!soundOn;this.textContent=soundOn?'🔊':'🔇';if(soundOn){actx();bubble();}};
+  // --- voce di JARVIS (TTS, locale/offline via Web Speech) ---
+  let voiceOn=true, itVoice=null, ttsWarmed=false, voiceName=localStorage.getItem('jarvis_voice')||'';
+  const listVoices=()=>{ try{ return speechSynthesis.getVoices()||[]; }catch{ return []; } };
+  function pickVoice(){ const vs=listVoices(); itVoice = vs.find(v=>/it[-_]/i.test(v.lang)&&v.localService) || vs.find(v=>/it[-_]/i.test(v.lang)) || vs.find(v=>v.localService) || null; }
+  function fillVoiceSel(){ const sel=document.getElementById('voicesel'); const vs=listVoices(); if(!sel||!vs.length) return; const loc=(a,b)=>(b.localService?1:0)-(a.localService?1:0); const it=vs.filter(v=>/it[-_]/i.test(v.lang)).sort(loc), oth=vs.filter(v=>!/it[-_]/i.test(v.lang)).sort(loc); const cur=(itVoice&&itVoice.name)||''; sel.innerHTML=[...it,...oth].map(v=>'<option value="'+v.name+'"'+(v.name===cur?' selected':'')+'>'+v.name+' ('+v.lang+(v.localService?', locale':', rete')+')</option>').join(''); }
+  function refreshVoices(){ pickVoice(); fillVoiceSel(); }
+  refreshVoices(); try{ speechSynthesis.onvoiceschanged=refreshVoices; }catch(_){}
+  function warmTTS(){ if(ttsWarmed)return; ttsWarmed=true; try{ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); }catch(_){} }
+  const TTS_URL='http://localhost:5002/speak';  // TTS locale (Piper); se non risponde -> voce di sistema
+  let curAudio=null;
+  function fallbackSpeak(t){ try{ warmTTS(); try{ logDebug('TTS sistema: voci='+listVoices().length+' voce='+((itVoice&&itVoice.name)||'default')); }catch(_){}
+      if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(', '+t); u.lang='it-IT'; if(itVoice)u.voice=itVoice; u.rate=1.0;
+      u.onstart=()=>{try{logDebug('TTS avviato')}catch(_){}}; u.onerror=ev=>{try{logDebug('TTS errore: '+(ev.error||'?'))}catch(_){}};
+      setTimeout(()=>{ try{ speechSynthesis.speak(u); speechSynthesis.resume(); }catch(e){ try{logDebug('TTS speak err: '+e)}catch(_){} } }, 90); }catch(_){} }
+  async function speak(text){ if(!voiceOn||!text){ try{logDebug('TTS muto (voiceOn='+voiceOn+')')}catch(_){} return; } const t=String(text).slice(0,1500);
+    try{ const r=await fetch(TTS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:', '+t})});
+      if(r.ok){ const b=await r.blob(); if(curAudio){try{curAudio.pause()}catch(_){}} curAudio=new Audio(URL.createObjectURL(b)); curAudio.play().then(()=>{try{logDebug('TTS Piper ok')}catch(_){}}).catch(()=>fallbackSpeak(t)); return; } }catch(_){ }
+    fallbackSpeak(t); }
+  document.getElementById('voice').onclick=function(){ voiceOn=!voiceOn; this.classList.toggle('off',!voiceOn); if(!voiceOn){try{speechSynthesis.cancel()}catch(_){}}else{ warmTTS(); speak('Voce attiva, Signore.'); } };
+  // --- interlocutore corrente (chi parla) ---
+  let currentSpeaker = localStorage.getItem('jarvis_speaker')||'Fra';
+  // --- Gate d'identità: l'utente nasce dalla voce; la tastiera è bloccata finché non lo si riconosce ---
+  const REQUIRE_VOICE_ID = true;   // kill-switch per manutenzione: false = nessun blocco
+  let identified = !REQUIRE_VOICE_ID;
+  function setLocked(on){
+    const lm=document.getElementById('lockmsg'); if(lm) lm.style.display=on?'block':'none';
+    const ci=document.getElementById('chatin'); if(ci){ ci.disabled=on; ci.placeholder = on?'Identificarsi a voce ("Hey JARVIS") per scrivere…':'Chat veloce con JARVIS (Ollama) — non salvata in memoria'; }
+    document.querySelectorAll('.tin').forEach(t=>t.setAttribute('contenteditable', on?'false':'true'));
+  }
+  function establishSpeaker(name){ currentSpeaker=(name&&String(name).trim())||currentSpeaker||'Fra'; identified=true; try{localStorage.setItem('jarvis_speaker',currentSpeaker);}catch(_){} const sp=document.getElementById('speaker'); if(sp) sp.value=currentSpeaker; setLocked(false); }
+  setLocked(REQUIRE_VOICE_ID);
+  (function(){ const sp=document.getElementById('speaker'); if(!sp) return; sp.value=currentSpeaker; sp.readOnly=true; sp.title='Identità stabilita dalla voce'; sp.onchange=()=>{ currentSpeaker=(sp.value.trim()||'Fra'); localStorage.setItem('jarvis_speaker',currentSpeaker); terms.forEach(el=>{ try{ if(el._ws&&el._ws.readyState===1) el._ws.send(JSON.stringify({type:'speaker',name:currentSpeaker})); }catch(_){} }); }; })();
+  // --- modalità locale globale (offline / tutto su Ollama) ---
+  let localOn=false;
+  document.getElementById('localbtn').onclick=function(){ localOn=!localOn; this.textContent=localOn?'🔌':'🌐'; this.classList.toggle('on',localOn); this.title=localOn?'LOCALE attiva — tutto su Ollama (clic per tornare online)':'Modalità locale (offline / tutto su Ollama)'; try{ terms.forEach(el=>{ try{ if(el._ws&&el._ws.readyState===1) el._ws.send(JSON.stringify({type:'localmode',on:localOn})); }catch(_){} }); }catch(_){} try{logDebug('localmode '+(localOn?'ON':'OFF'))}catch(_){} speak(localOn?'Modalità locale attiva, Signore. Lavoro tutto in locale.':'Torno online, Signore.'); };
+  document.getElementById('restartbtn').onclick=function(){ try{logDebug('» RESTART-ALL')}catch(_){} speak('Riavvio tutto da capo, Signore.'); try{ const w=new WebSocket('ws://'+location.host); w.onopen=()=>{ try{w.send(JSON.stringify({type:'restart-all'}))}catch(_){} setTimeout(()=>{ try{w.close()}catch(_){} location.reload(); },3500); }; w.onerror=()=>setTimeout(()=>location.reload(),1500); }catch(_){ location.reload(); } };
+  // --- pannello debug ---
+  const dbgEl=document.getElementById('dbgl');
+  function logDebug(s){ if(!dbgEl)return; const t=new Date().toLocaleTimeString('it-IT'); dbgEl.textContent+='['+t+'] '+s+'\n'; if(dbgEl.textContent.length>24000) dbgEl.textContent=dbgEl.textContent.slice(-18000); dbgEl.scrollTop=dbgEl.scrollHeight; }
+  document.getElementById('dbgbtn').onclick=()=>document.getElementById('dbg').classList.toggle('on');
+  document.getElementById('dbgx').onclick=()=>document.getElementById('dbg').classList.remove('on');
+  logDebug('UI avviata.');
   const cv=document.getElementById('ripple'),cx=cv.getContext('2d');let W,H;const rs=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};rs();addEventListener('resize',rs);
   const rip=[];const ripple=(x,y,a,mx)=>rip.push({x,y,r:2,max:mx||Math.max(W,H)*.6,a:a||.22});let cg=0;
   (function loop(){cx.clearRect(0,0,W,H);cg++;if(cg%70===0)ripple(W/2,H/2,.16);for(let i=rip.length-1;i>=0;i--){const r=rip[i];r.r+=1.1;const a=r.a*(1-r.r/r.max);if(a<=.01){rip.splice(i,1);continue;}cx.beginPath();cx.arc(r.x,r.y,r.r,0,7);cx.strokeStyle='rgba(255,255,255,'+(a*1.2)+')';cx.lineWidth=2.2;cx.stroke();cx.beginPath();cx.arc(r.x,r.y,r.r+3,0,7);cx.strokeStyle='rgba(120,160,200,'+(a*.5)+')';cx.lineWidth=1.4;cx.stroke();}requestAnimationFrame(loop)})();
@@ -116,29 +187,32 @@
     step();
   }
 
-  function makeTerminal(saved){
+  function makeTerminal(saved, initPrompt){
     const id = saved ? saved.id : ++n; if(saved && saved.id>n) n=saved.id; openCount++;updFab();
-    const el=document.createElement('div');el.className='term';el._id=id;el._w=(saved&&saved.w)||480;el._h=(saved&&saved.h)||340;el._q=[];el._typing=false;
+    const el=document.createElement('div');el.className='term';el._id=id;el._w=(saved&&saved.w)||480;el._h=(saved&&saved.h)||340;el._q=[];el._typing=false;el._initPrompt=initPrompt||null;
     el._sessionId = saved ? (saved.sessionId||null) : null;
     if(saved){ el.style.left=saved.left+'px';el.style.top=saved.top+'px'; }
     else { el.style.left=(90+(cascade%6)*44)+'px';el.style.top=(60+(cascade%6)*38)+'px';cascade++; }
     el.style.zIndex=++z;
     if(!saved||!saved.collapsed){ el.style.width=el._w+'px';el.style.height=el._h+'px'; }
     terms.push(el);
-    el.innerHTML='<div class="bar"><span class="dot"></span><span class="title">Terminale '+id+'</span><span class="btns"><button class="min" title="Comprimi/espandi">–</button><button class="close" title="Chiudi">×</button></span></div>'+
+    el.innerHTML='<div class="bar"><span class="dot"></span><span class="title">Terminale '+id+'</span><span class="btns"><button class="auth" title="Autorizzazioni: chiedi sempre">🔒</button><button class="stop" title="Interrompi il task">⏹</button><button class="rd" title="Lettura risposte ad alta voce (switch on/off)">📢</button><button class="say" title="Leggi ultima risposta">🔊</button><button class="min" title="Comprimi/espandi">–</button><button class="close" title="Chiudi">×</button></span></div>'+
       '<div class="conv"><div class="inputline"><span class="pr">&gt;</span><span class="tin" contenteditable="true" spellcheck="false"></span><span class="caret">█</span></div></div><div class="resize"></div>';
     document.body.appendChild(el);if(!saved)bubble();ripple(el.offsetLeft+40,el.offsetTop+20,.28,360);
     el._conv=el.querySelector('.conv'); el._input=el.querySelector('.inputline'); const tin=el.querySelector('.tin'),titleEl=el.querySelector('.title');
+    if(!identified) tin.setAttribute('contenteditable','false');
     el._stick=true; el._conv.addEventListener('scroll',()=>{ el._stick=atBottom(el); });
     if(saved){ if(saved.title) titleEl.textContent=saved.title; if(saved.collapsed){el.classList.add('collapsed');el.style.width='';el.style.height='';}
       const r=document.createElement('div');r.className='msg doodle';r.textContent='— sessione ripristinata —';el._conv.insertBefore(r,el._input); }
 
     const ws=new WebSocket('ws://'+location.host); el._ws=ws;
-    ws.onopen=()=>{conn.textContent='● bridge connesso';conn.style.color='#2bb673';if(el._sessionId)ws.send(JSON.stringify({type:'resume',id:el._sessionId}));};
+    ws.onopen=()=>{conn.textContent='● bridge connesso';conn.style.color='#2bb673';if(el._sessionId)ws.send(JSON.stringify({type:'resume',id:el._sessionId}));try{ws.send(JSON.stringify({type:'speaker',name:currentSpeaker}));}catch(_){}try{ws.send(JSON.stringify({type:'localmode',on:localOn}));}catch(_){}if(el._initPrompt){const p=el._initPrompt;el._initPrompt=null;setTimeout(()=>{try{tin.textContent=p;send();}catch(_){}} ,250);}};
     ws.onclose=()=>{stopWait(el);setState(el,'idle');};
     ws.onmessage=e=>{const m=JSON.parse(e.data);
-      if(m.type==='response'){ stopWait(el); enqueue(el,m.text); }
-      else if(m.type==='permission'){ stopWait(el);
+      if(m.type==='debug'){ logDebug('T'+el._id+'  '+m.text); return; }
+      logDebug('T'+el._id+' « '+m.type+(m.tool?' '+m.tool:'')+(m.state?' '+m.state:'')+(m.usd!=null?' $'+Number(m.usd).toFixed(4):''));
+      if(m.type==='response'){ stopWait(el); el._lastResponse=(el._lastResponse||'')+m.text; enqueue(el,m.text); }
+      else if(m.type==='permission'){ stopWait(el); speak('Signore, richiesta di intervento: autorizzazione per '+m.tool+'.');
         const d=document.createElement('div');d.className='perm';const inp=typeof m.input==='object'?JSON.stringify(m.input,null,1):String(m.input??'');
         d.innerHTML='<b>🔐 permesso richiesto</b> — <b>'+m.tool+'</b><div class="pin">'+inp.replace(/</g,'&lt;').slice(0,600)+'</div><div class="pb"><button class="ok">Accetta</button><button class="no">Rifiuta</button></div>';
         d.querySelector('.ok').onclick=()=>{ws.send(JSON.stringify({type:'permission-response',id:m.id,allow:true}));d.querySelector('.pb').innerHTML='<span style="color:#2bb673">✓ accettato</span>';};
@@ -147,9 +221,9 @@
       else if(m.type==='error'){ stopWait(el); errMsg(el,m.text); }
       else if(m.type==='state') setState(el, m.state==='active'?'busy':m.state);
       else if(m.type==='session'){ el._sessionId=m.id; saveState(); }
-      else if(m.type==='done'){ stopWait(el); }
+      else if(m.type==='done'){ stopWait(el); if(el._readFull&&el._lastResponse) speak(el._lastResponse); else speak('Elaborazione completata, Signore.'); }
     };
-    function send(){const t=tin.innerText.replace(/ /g,' ').trim();if(!t||ws.readyState!==1)return;userMsg(el,t);ws.send(JSON.stringify({type:'prompt',text:t}));tin.textContent='';
+    function send(){if(!identified){logDebug('T'+el._id+' bloccato: identificarsi a voce ("Hey JARVIS")');return;}const t=tin.innerText.replace(/ /g,' ').trim();if(!t||ws.readyState!==1)return;userMsg(el,t);logDebug('T'+el._id+' » '+t.slice(0,80));el._lastResponse='';ws.send(JSON.stringify({type:'prompt',text:t}));tin.textContent='';
       titleEl.textContent=t.slice(0,30)+(t.length>30?'…':''); setState(el,'busy'); startWait(el);saveState();}
     tin.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     el._conv.addEventListener('mousedown',e=>{if(e.target.closest('.perm')||e.target.classList.contains('tin'))return;if(!getSelection().toString())setTimeout(()=>tin.focus(),0);});
@@ -161,15 +235,34 @@
       if(el.classList.contains('collapsed')){el.classList.remove('collapsed');el.style.width=el._w+'px';el.style.height=el._h+'px';bubble();}
       else{el._w=el.offsetWidth;el._h=el.offsetHeight;el.classList.add('collapsed');el.style.width='';el.style.height='';droplet();}front(el);saveState();});
     el.querySelector('.resize').addEventListener('mousedown',e=>{e.stopPropagation();const sx=e.clientX,sy=e.clientY,ow=el.offsetWidth,oh=el.offsetHeight;const mv=ev=>{el.style.width=Math.max(320,ow+ev.clientX-sx)+'px';el.style.height=Math.max(220,oh+ev.clientY-sy)+'px'};const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);el._w=el.offsetWidth;el._h=el.offsetHeight;saveState();};document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);});
+    el.querySelector('.say').onclick=e=>{e.stopPropagation();speak(el._lastResponse||'Nessuna risposta da leggere, Signore.');};
+    el.querySelector('.rd').onclick=function(e){e.stopPropagation();el._readFull=!el._readFull;this.classList.toggle('on',el._readFull);speak(el._readFull?'Leggero le risposte, Signore.':'Solo avvisi di stato.');};
+    el._auto=false;
+    el.querySelector('.auth').onclick=function(e){e.stopPropagation();el._auto=!el._auto;this.textContent=el._auto?'🔓':'🔒';this.title=el._auto?'Autonomo (eccetto azioni critiche: elimina/installa/autentica/pubblica)':'Autorizzazioni: chiedi sempre';try{ws.send(JSON.stringify({type:'mode',auto:el._auto}));}catch(_){} speak(el._auto?'Terminale autonomo, Signore. Le azioni critiche restano sotto il Suo controllo.':'Chiedero sempre autorizzazione.');};
+    el.querySelector('.stop').onclick=e=>{e.stopPropagation();try{ws.send(JSON.stringify({type:'abort'}));}catch(_){} stopWait(el);clearTimeout(el._typeT);el._q=[];el._typing=false;setState(el,'idle');logDebug('T'+el._id+' » abort');speak('Interrotto, Signore.');};
     el.querySelector('.min').onclick=e=>{e.stopPropagation();bar.dispatchEvent(new Event('dblclick'));};
-    el.querySelector('.close').onclick=e=>{e.stopPropagation();droplet();stopWait(el);clearTimeout(el._typeT);try{ws.close()}catch(_){}el.remove();openCount--;updFab();const ix=terms.indexOf(el);if(ix>=0)terms.splice(ix,1);saveState();};
+    el.querySelector('.close').onclick=e=>{e.stopPropagation();droplet();stopWait(el);clearTimeout(el._typeT);try{ws.send(JSON.stringify({type:'abort'}))}catch(_){}try{ws.close()}catch(_){}el.remove();openCount--;updFab();const ix=terms.indexOf(el);if(ix>=0)terms.splice(ix,1);saveState();};
     if(!saved)setTimeout(()=>tin.focus(),0);
     saveState();
     return el;
   }
-  fab.addEventListener('click',()=>{actx();makeTerminal();});
+  fab.addEventListener('click',()=>{actx();warmTTS();makeTerminal();});
   // al caricamento: ripristina i terminali salvati (sessione + layout)
   (function restore(){ const data=loadState(); for(const s of data) makeTerminal(s); })();
+  // --- chat veloce in fondo (Ollama diretto via ponte, fuori dalla memoria) ---
+  (function(){
+    const log=document.getElementById('chatlog'), inp=document.getElementById('chatin'); if(!inp) return;
+    function addLine(cls,txt){ const d=document.createElement('div'); d.className=cls; d.textContent=(cls==='u'?'» ':'JARVIS  ')+txt; log.appendChild(d); while(log.children.length>8) log.removeChild(log.firstChild); log.scrollTop=log.scrollHeight; }
+    let cws=null;
+    function connect(){ try{ cws=new WebSocket('ws://'+location.host); }catch(_){ return; }
+      cws.onopen=()=>{ try{ cws.send(JSON.stringify({type:'speaker',name:currentSpeaker})); }catch(_){} };
+      cws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch{ return; } if(m.type==='voice-state'){ const vs=document.getElementById('voicestate'); if(vs){ const on=m.state==='active'; vs.textContent = on?'🎙️ sessione attiva':'💤 di\' "Hey JARVIS"'; vs.style.color = on?'#2bb673':'#8a93a6'; } logDebug('VOCE stato: '+m.state); return; } if(m.type==='voice'){ logDebug('VOCE « '+String(m.text||'').slice(0,60)); establishSpeaker(m.speaker); try{ cws.send(JSON.stringify({type:'speaker',name:currentSpeaker})); }catch(_){} terms.forEach(el=>{ try{ if(el._ws&&el._ws.readyState===1) el._ws.send(JSON.stringify({type:'speaker',name:currentSpeaker})); }catch(_){} }); logDebug('VOCE: parlante = '+currentSpeaker); sendChat(m.text); return; } if(m.type==='ui'){ if(m.action==='open-terminal'){ try{ const el=makeTerminal(null, m.prompt||null); front(el); logDebug('UI: apro terminale'+(m.prompt?(' -> '+String(m.prompt).slice(0,40)):'')); }catch(_){} } return; } if(m.type==='chat-reply'){ addLine('j',m.text); logDebug('CHAT « rispondo a voce ('+(m.text||'').length+' car)'); speak(m.text); } };
+      cws.onclose=()=>setTimeout(connect,2000); }
+    connect();
+    function sendChat(t){ t=String(t||'').trim(); if(!t) return; if(!identified){ addLine('j','Si identifichi a voce, Signore: "Hey JARVIS".'); return; } if(!cws||cws.readyState!==1){ addLine('j','(ponte non connesso)'); return; } addLine('u',t); logDebug('CHAT » '+t.slice(0,60)); cws.send(JSON.stringify({type:'chat',text:t})); }
+    window._jarvisSendChat = sendChat;
+    inp.addEventListener('keydown',ev=>{ if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); sendChat(inp.value); inp.value=''; } });
+  })();
 })();
 </script>
 </body></html>
