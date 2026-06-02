@@ -20,6 +20,10 @@ sh.Run Chr(34) & sttDir & "\run-voice.cmd" & Chr(34), 0, False
 Dim profDir : profDir = fso.GetParentFolderName(WScript.ScriptFullName) & "\profile"
 sh.Run Chr(34) & profDir & "\run-profile.cmd" & Chr(34), 0, False
 
+' --- Organizzatore RAW_SOURCE -> WIKI (watch su Vault + cartelle Dropbox/Drive, nascosto) ---
+Dim wikiDir : wikiDir = fso.GetParentFolderName(WScript.ScriptFullName) & "\raw-to-wiki"
+sh.Run Chr(34) & wikiDir & "\run-wiki.cmd" & Chr(34), 0, False
+
 ' --- 1) Ponte: avvio nascosto via watchdog (rilancia node se esce; 0 = finestra invisibile) ---
 sh.Run Chr(34) & bridgeDir & "\run-bridge.cmd" & Chr(34), 0, False
 
