@@ -1,6 +1,6 @@
 ---
 tipo: progetto-design
-aggiornato: 2026-06-01
+aggiornato: 2026-06-02
 ---
 
 # JARVIS — Debug log + Verificatore in background
@@ -14,12 +14,17 @@ aggiornato: 2026-06-01
 - **Report via mail** (Gmail MCP) con: cosa ha sistemato, cosa propone, anomalie ricorrenti. Poi può cancellare/archiviare il log del giorno.
 - Stato: **documentato, da attivare quando JARVIS è live** (serve il logging continuo del ragionamento).
 
-## 2. Verificatore in background (ATTIVO ORA)
-**Obiettivo:** rivedere i record recenti e assegnare/verificare la `confidence`, senza rallentare la conversazione. Tocca **solo i metadati di verifica**, mai contenuto sostanziale o codice.
+## 2. Verificatore in background — A DUE STADI (ATTIVO)
+**Obiettivo:** distillare l'inbox in record e verificare la `confidence`, senza rallentare la conversazione e a costo quasi nullo. Tocca metadati e promozione/potatura, mai codice.
 
-- **Task schedulato** `vault-verifier` (giornaliero, 03:30).
-- Trova in `03_RECORDS/` i record con `verificato: false` (o modificati nelle ultime 24h).
-- Per ciascuno: **coerenza interna** (contraddizioni con altri record/SYNTHESIS) + se un'affermazione è un fatto esterno verificabile **e c'è accesso web**, **incrocia più fonti indipendenti** (mira a 4-5) e cita le fonti.
-- Aggiorna frontmatter: `confidence` (0-1), `fonti`, `verificato: true/false`. Conservativo: nel dubbio NON marca verificato, **flagga** per revisione.
-- **Report**: lascia un riepilogo Telegram via outbox (n° verificati, quali a bassa confidenza da rivedere).
-- **Caveat:** la verifica *esterna* dipende dall'accesso web dell'ambiente schedulato (da confermare); la coerenza *interna* funziona comunque.
+**Stadio 1 — Ollama (locale, gratuito).** Script `_scripts/vault-verifier.mjs`:
+- Legge le note grezze in `01_INBOX/` (catturate dal canale d'ingestione) e i record `verificato: false`.
+- Per ciascuna, qwen3 decide: **promote** (fatto utile e stabile → record in `03_RECORDS/`, indicizzato subito nell'indice caldo), **flag** (utile ma incerto/da verificare), **drop** (rumore → archiviato in `01_INBOX/_processed/`).
+- Le voci `flag`/da-verificare finiscono in `_scripts/logs/verifier-flagged.json` per lo Stadio 2. Non cancella nulla: le note lavorate vanno in `_processed/`.
+
+**Stadio 2 — Claude (mirato, SOLO sui flag).** Prompt notturno:
+> Leggi `_scripts/logs/verifier-flagged.json`. Per ogni voce: valuta la coerenza interna col resto del Vault e, se il `claim` è un fatto esterno verificabile e c'è accesso web, incrocia 3-5 fonti indipendenti. Aggiorna il record indicato: `confidence` (0-1), `fonti`, `verificato: true` se confermato; **pota** il record se falso; nel dubbio lascia `verificato: false` e abbassa la confidence. Poi re-indicizza i record toccati (`node "_scripts/smart-connections-mcp/vault-embed.mjs" "<record>"`) e lascia un riepilogo Telegram via outbox (promossi, verificati, potati, da rivedere). Infine svuota `verifier-flagged.json`.
+
+**Orchestrazione (03:30):** il task schedulato esegue prima `node "_scripts/vault-verifier.mjs"` (stadio 1) e poi la passata Claude dello stadio 2 sul file flagged. Motivo dei due stadi: un 8B locale come unico verificatore rischia di confermare errori o potare fatti veri; Claude (con web) resta dove serve il giudizio, ma tocca solo una manciata di voci → costo vicino a zero.
+
+- **Caveat:** la verifica *esterna* dipende dall'accesso web dell'ambiente schedulato; la coerenza *interna* e lo stadio 1 funzionano comunque. Ollama dev'essere attivo alle 03:30.

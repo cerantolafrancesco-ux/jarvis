@@ -15,10 +15,14 @@ linked_nodes: ["[[neural-vault]]", "[[notifiche-telegram]]", "[[nssm]]", "[[n8n]
 reuse_count: 0
 last_recalled:
 verificato: true
-confidence: 0.9
+confidence: 0.92
 fonti:
   - https://docs.n8n.io/hosting/installation/npm/
   - https://nssm.cc/
+  - https://github.com/n8n-io/n8n/issues/11313
+  - https://www.npmjs.com/package/n8n
+  - https://flowgenius.in/node-version-incompatibility-n8n/
+ri_verificato: 2026-06-02
 ---
 
 # 🧠 Contesto / Obiettivo
